@@ -8,6 +8,7 @@ import transactionsRoutes from './routes/transactions.js';
 import budgetsRoutes from './routes/budgets.js';
 import reportsRoutes from './routes/reports.js';
 import { seedCategories } from './scripts/seedCategories.js';
+import { seedUsers } from './scripts/seedUsers.js';
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
@@ -26,6 +27,13 @@ connectDB().then(async () => {
     await seedCategories();
   } catch (err) {
     console.error('Category seed failed (server will still run):', err.message);
+  }
+  if (process.env.SEED_USERS === 'true') {
+    try {
+      await seedUsers();
+    } catch (err) {
+      console.error('User seed failed (server will still run):', err.message);
+    }
   }
 });
 
