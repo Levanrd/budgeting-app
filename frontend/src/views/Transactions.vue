@@ -168,7 +168,8 @@ async function load() {
     if (filterMonth.value) params.monthKey = filterMonth.value;
     if (filterType.value) params.type = filterType.value;
     const { data } = await getTransactions(params);
-    transactions.value = data;
+    // Sort by date descending (newest first)
+    transactions.value = data.sort((a, b) => new Date(b.date) - new Date(a.date));
   } catch {
     transactions.value = [];
   } finally {
