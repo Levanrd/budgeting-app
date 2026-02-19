@@ -22,7 +22,13 @@ app.use('/api/reports', reportsRoutes);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
-connectDB().then(async () => {
+// Initialize DB connection and seeders
+let dbInitialized = false;
+async function initializeDB() {
+  if (dbInitialized) return;
+  dbInitialized = true;
+  
+  await connectDB();
   try {
     await seedCategories();
   } catch (err) {
@@ -35,7 +41,24 @@ connectDB().then(async () => {
       console.error('User seed failed (server will still run):', err.message);
     }
   }
-});
+}
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Initialize on first request (for serverless) or immediately (for local)
+if (process.env.VERCEL) {
+  // Vercel serverless: initialize on first request
+  app.use(async (req, res, next) => {
+    await initializeDB();
+    next();
+  });
+} else {
+  // Local development: initialize immediately
+  initializeDB();
+}
+
+// Only start server if not in Vercel (serverless)
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
+
+export default app;
