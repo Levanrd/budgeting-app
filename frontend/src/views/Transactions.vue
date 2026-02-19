@@ -169,7 +169,7 @@ async function load() {
     if (filterType.value) params.type = filterType.value;
     const { data } = await getTransactions(params);
     // Sort by date descending (newest first)
-    transactions.value = data.sort((a, b) => new Date(b.date) - new Date(a.date));
+    transactions.value = data.reverse();
   } catch {
     transactions.value = [];
   } finally {
