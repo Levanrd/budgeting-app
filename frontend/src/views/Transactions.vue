@@ -1,7 +1,13 @@
 <template>
   <div class="transactions-page">
     <div class="toolbar">
-      <el-select v-model="filterMonth" placeholder="Month" clearable style="width: 160px" @change="load">
+      <el-select
+        v-model="filterMonth"
+        placeholder="Month"
+        clearable
+        style="width: 160px"
+        @change="load"
+      >
         <el-option
           v-for="m in monthOptions"
           :key="m.value"
@@ -9,18 +15,37 @@
           :value="m.value"
         />
       </el-select>
-      <el-select v-model="filterType" placeholder="Type" clearable style="width: 120px" @change="load">
+
+      <el-select
+        v-model="filterType"
+        placeholder="Type"
+        clearable
+        style="width: 120px"
+        @change="load"
+      >
         <el-option label="Income" value="income" />
         <el-option label="Expense" value="expense" />
       </el-select>
+
       <el-button type="primary" @click="openDialog()">Add transaction</el-button>
     </div>
 
     <el-card shadow="hover">
-      <el-table v-loading="loading" :data="transactions" stripe>
-        <el-table-column prop="date" label="Date" width="120">
+      <el-table
+        v-loading="loading"
+        :data="paginatedTransactions"
+        stripe
+        @sort-change="handleSortChange"
+      >
+        <el-table-column
+          prop="date"
+          label="Date"
+          width="120"
+          sortable="custom"
+        >
           <template #default="{ row }">{{ formatDate(row.date) }}</template>
         </el-table-column>
+
         <el-table-column prop="type" label="Type" width="100">
           <template #default="{ row }">
             <el-tag :type="row.type === 'income' ? 'success' : 'danger'" size="small">
@@ -28,7 +53,9 @@
             </el-tag>
           </template>
         </el-table-column>
+
         <el-table-column prop="category.name" label="Category" />
+
         <el-table-column prop="amount" label="Amount" width="120" align="right">
           <template #default="{ row }">
             <span :class="row.type === 'income' ? 'text-income' : 'text-expense'">
@@ -36,7 +63,9 @@
             </span>
           </template>
         </el-table-column>
+
         <el-table-column prop="description" label="Description" show-overflow-tooltip />
+
         <el-table-column label="Actions" width="140" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openDialog(row)">Edit</el-button>
@@ -44,6 +73,15 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="sortedTransactions.length"
+        layout="total, sizes, prev, pager, next, jumper"
+        class="pagination"
+      />
     </el-card>
 
     <el-dialog
@@ -59,6 +97,7 @@
             <el-radio value="expense">Expense</el-radio>
           </el-radio-group>
         </el-form-item>
+
         <el-form-item label="Category" prop="category">
           <el-select v-model="form.category" placeholder="Category" style="width: 100%" filterable>
             <el-option
@@ -69,9 +108,11 @@
             />
           </el-select>
         </el-form-item>
+
         <el-form-item label="Amount" prop="amount">
           <el-input-number v-model="form.amount" :min="0.01" :precision="2" style="width: 100%" />
         </el-form-item>
+
         <el-form-item label="Date" prop="date">
           <el-date-picker
             v-model="form.date"
@@ -80,10 +121,12 @@
             style="width: 100%"
           />
         </el-form-item>
+
         <el-form-item label="Description" prop="description">
           <el-input v-model="form.description" type="textarea" :rows="2" />
         </el-form-item>
       </el-form>
+
       <template #footer>
         <el-button @click="dialogVisible = false">Cancel</el-button>
         <el-button type="primary" :loading="saving" @click="submitForm">Save</el-button>
@@ -102,7 +145,7 @@
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { ElMessage } from 'element-plus';
 import { getTransactions, createTransaction, updateTransaction, deleteTransaction } from '../api/transactions';
 import { getCategories } from '../api/categories';
 import { formatMoney } from '../utils/format';
@@ -110,15 +153,28 @@ import { formatMoney } from '../utils/format';
 const loading = ref(false);
 const saving = ref(false);
 const deleting = ref(false);
+
 const transactions = ref([]);
 const categories = ref([]);
+
 const filterMonth = ref('');
 const filterType = ref('');
+
+const currentPage = ref(1);
+const pageSize = ref(10);
+
 const dialogVisible = ref(false);
 const deleteDialogVisible = ref(false);
+
 const formRef = ref(null);
 const editingId = ref(null);
 const deleteId = ref(null);
+
+// default sort: createdAt newest first
+const sortState = ref({
+  prop: 'createdAt',
+  order: 'descending',
+});
 
 const form = reactive({
   type: 'expense',
@@ -145,7 +201,10 @@ const monthOptions = (() => {
   for (let i = 0; i < 12; i++) {
     const date = new Date(d.getFullYear(), d.getMonth() - i, 1);
     const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    opts.push({ value, label: date.toLocaleString('default', { month: 'long', year: 'numeric' }) });
+    opts.push({
+      value,
+      label: date.toLocaleString('default', { month: 'long', year: 'numeric' }),
+    });
   }
   return opts;
 })();
@@ -157,8 +216,50 @@ watch(
   }
 );
 
+watch(pageSize, () => {
+  currentPage.value = 1;
+});
+
 function formatDate(d) {
   return new Date(d).toLocaleDateString();
+}
+
+// sorted list (default createdAt desc, but user can sort by date)
+const sortedTransactions = computed(() => {
+  const data = [...transactions.value];
+  const { prop, order } = sortState.value || {};
+
+  if (!prop || !order) return data;
+
+  return data.sort((a, b) => {
+    let valA = a?.[prop];
+    let valB = b?.[prop];
+
+    // date fields
+    if (prop === 'date' || prop === 'createdAt') {
+      valA = new Date(valA);
+      valB = new Date(valB);
+    }
+
+    if (order === 'ascending') return valA > valB ? 1 : -1;
+    if (order === 'descending') return valA < valB ? 1 : -1;
+    return 0;
+  });
+});
+
+const paginatedTransactions = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return sortedTransactions.value.slice(start, start + pageSize.value);
+});
+
+function handleSortChange({ prop, order }) {
+  // if user clears sorting, revert to default createdAt desc
+  if (!prop || !order) {
+    sortState.value = { prop: 'createdAt', order: 'descending' };
+    return;
+  }
+  sortState.value = { prop, order };
+  currentPage.value = 1;
 }
 
 async function load() {
@@ -167,9 +268,15 @@ async function load() {
     const params = {};
     if (filterMonth.value) params.monthKey = filterMonth.value;
     if (filterType.value) params.type = filterType.value;
+
     const { data } = await getTransactions(params);
-    // Sort by date descending (newest first)
-    transactions.value = data.reverse();
+
+    transactions.value = Array.isArray(data) ? data : [];
+    currentPage.value = 1;
+
+    // keep default sort unless user has actively chosen another sort
+    // (if you want load() to ALWAYS reset sort, uncomment next line)
+    // sortState.value = { prop: 'createdAt', order: 'descending' };
   } catch {
     transactions.value = [];
   } finally {
@@ -179,7 +286,7 @@ async function load() {
 
 async function loadCategories() {
   const { data } = await getCategories();
-  categories.value = data;
+  categories.value = Array.isArray(data) ? data : [];
 }
 
 function openDialog(row) {
@@ -206,6 +313,7 @@ function resetForm() {
 async function submitForm() {
   await formRef.value?.validate().catch(() => {});
   saving.value = true;
+
   try {
     const payload = {
       type: form.type,
@@ -214,6 +322,7 @@ async function submitForm() {
       date: form.date,
       description: form.description,
     };
+
     if (editingId.value) {
       await updateTransaction(editingId.value, payload);
       ElMessage.success('Transaction updated');
@@ -221,10 +330,11 @@ async function submitForm() {
       await createTransaction(payload);
       ElMessage.success('Transaction added');
     }
+
     dialogVisible.value = false;
-    load();
+    await load();
   } catch (e) {
-    ElMessage.error(e.response?.data?.message || 'Save failed');
+    ElMessage.error(e?.response?.data?.message || 'Save failed');
   } finally {
     saving.value = false;
   }
@@ -238,12 +348,13 @@ function confirmDelete(row) {
 async function doDelete() {
   if (!deleteId.value) return;
   deleting.value = true;
+
   try {
     await deleteTransaction(deleteId.value);
     ElMessage.success('Transaction deleted');
     deleteDialogVisible.value = false;
     deleteId.value = null;
-    load();
+    await load();
   } catch {
     ElMessage.error('Delete failed');
   } finally {
@@ -266,6 +377,10 @@ onMounted(() => {
   gap: 12px;
   margin-bottom: 16px;
   flex-wrap: wrap;
+}
+.pagination {
+  margin-top: 16px;
+  justify-content: flex-end;
 }
 .text-income { color: #34a853; }
 .text-expense { color: #ea4335; }
