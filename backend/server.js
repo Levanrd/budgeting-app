@@ -11,7 +11,10 @@ import { seedCategories } from './scripts/seedCategories.js';
 import { seedUsers } from './scripts/seedUsers.js';
 
 const app = express();
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || true,
+  credentials: true
+}));
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
@@ -27,7 +30,7 @@ let dbInitialized = false;
 async function initializeDB() {
   if (dbInitialized) return;
   dbInitialized = true;
-  
+
   await connectDB();
   try {
     await seedCategories();
