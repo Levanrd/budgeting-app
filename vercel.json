@@ -1,0 +1,35 @@
+{
+  "buildCommand": "cd client && npm install && npm run build",
+  "outputDirectory": "client/dist",
+  "framework": "vite",
+  "env": {
+    "MONGODB_URI": {
+      "description": "MongoDB Atlas connection string"
+    },
+    "JWT_SECRET": {
+      "description": "JWT signing secret - use a strong random value"
+    },
+    "CORS_ORIGIN": {
+      "description": "Frontend URL for CORS (e.g., https://yourapp.vercel.app)"
+    },
+    "NODE_ENV": {
+      "description": "Environment mode",
+      "value": "production"
+    },
+    "SEED_USERS": {
+      "description": "Seed test users on startup",
+      "value": "false"
+    }
+  },
+  "functions": {
+    "server/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "server/server.js"
+    }
+  ]
+}

@@ -11,10 +11,26 @@ import { seedCategories } from './scripts/seedCategories.js';
 import { seedUsers } from './scripts/seedUsers.js';
 
 const app = express();
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || true,
+
+// CORS configuration - restrict to specific origin in production
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   credentials: true
-}));
+};
+
+// In development, allow localhost origins
+if (process.env.NODE_ENV === 'development') {
+  corsOptions.origin = (origin, callback) => {
+    const allowedOrigins = ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:5173/'];
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  };
+}
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
