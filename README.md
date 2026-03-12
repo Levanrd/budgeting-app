@@ -48,7 +48,7 @@ budgeting-app/
 
 1. From project root:
    ```bash
-   cd backend
+   cd server
    npm install
    ```
 2. Copy `.env.example` to `.env` and set:
@@ -65,7 +65,7 @@ budgeting-app/
 
 1. From project root:
    ```bash
-   cd frontend
+   cd client
    npm install
    npm run dev
    ```
@@ -84,7 +84,7 @@ budgeting-app/
 Admins can add/edit categories and default allocations in the Admin module. To grant admin to a user (e.g. first account):
 
 ```bash
-cd backend
+cd server
 node scripts/makeAdmin.js your@email.com
 ```
 
