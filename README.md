@@ -20,14 +20,14 @@ A full-stack budgeting app to track income, categorize spending, plan monthly al
 
 ```
 budgeting-app/
-├── backend/          # Node.js API
+├── server/          # Node.js API
 │   ├── config/       # DB connection
 │   ├── middleware/   # auth
 │   ├── models/       # User, Category, Transaction, Budget
 │   ├── routes/       # auth, categories, transactions, budgets, reports
 │   ├── scripts/      # seed default categories
 │   └── server.js
-├── frontend/         # Vue 3 app
+├── client/         # Vue 3 app
 │   ├── src/
 │   │   ├── api/      # API client and endpoints
 │   │   ├── layouts/
@@ -78,8 +78,8 @@ budgeting-app/
 
 ## Default categories (seeded)
 
-- Expense: Tithes, Bills, Expenses, Debt, Savings, Emergency Fund  
-- Income: Salary, Other Income  
+- Expense: Tithes, Bills, Expenses, Debt, Savings, Emergency Fund
+- Income: Salary, Other Income
 
 Admins can add/edit categories and default allocations in the Admin module. To grant admin to a user (e.g. first account):
 
