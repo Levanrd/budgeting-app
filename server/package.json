@@ -9,6 +9,9 @@
     "dev": "node --watch server.js",
     "seed:users": "node scripts/seedUsers.js"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",

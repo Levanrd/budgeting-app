@@ -4,8 +4,8 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "server/server.js"
+      "source": "/((?!assets/|favicon.ico|vite.svg).*)",
+      "destination": "/index.html"
     }
   ]
 }

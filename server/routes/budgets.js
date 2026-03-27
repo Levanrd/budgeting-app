@@ -2,7 +2,6 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import Budget from '../models/Budget.js';
 import Transaction from '../models/Transaction.js';
-import Category from '../models/Category.js';
 import { protect } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -66,9 +65,20 @@ router.get('/summary/:monthKey', protect, async (req, res) => {
         category,
         allocated: amount,
         spent: spentByCategory[cid] || 0,
-        remaining: Math.max(0, amount - (spentByCategory[cid] || 0)),
+        remaining: amount - (spentByCategory[cid] || 0),
       })
     );
+
+    Object.entries(spentByCategory).forEach(([cid, spent]) => {
+      if (!allocationMap[cid]) {
+        categoryBreakdown.push({
+          category: { _id: cid, name: 'Unplanned spending', slug: 'unplanned-spending', type: 'expense' },
+          allocated: 0,
+          spent,
+          remaining: -spent,
+        });
+      }
+    });
 
     res.json({
       monthKey,

@@ -1,6 +1,8 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import Category from '../models/Category.js';
+import Budget from '../models/Budget.js';
+import Transaction from '../models/Transaction.js';
 import { protect, admin } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -75,6 +77,17 @@ router.put(
 
 router.delete('/:id', protect, admin, async (req, res) => {
   try {
+    const [transactionInUse, budgetInUse] = await Promise.all([
+      Transaction.exists({ category: req.params.id }),
+      Budget.exists({ 'allocations.category': req.params.id }),
+    ]);
+
+    if (transactionInUse || budgetInUse) {
+      return res.status(409).json({
+        message: 'Category is still in use by transactions or budgets and cannot be deleted',
+      });
+    }
+
     const category = await Category.findByIdAndDelete(req.params.id);
     if (!category) return res.status(404).json({ message: 'Category not found' });
     res.json({ message: 'Category deleted' });

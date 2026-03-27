@@ -7,7 +7,7 @@ const router = express.Router();
 
 const getMonthKey = (date) => {
   const d = new Date(date);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
 };
 
 router.get('/', protect, async (req, res) => {

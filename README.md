@@ -1,93 +1,121 @@
 # Budgeting Application
 
-A full-stack budgeting app to track income, categorize spending, plan monthly allocations (tithes, bills, debt, savings), and view clear summaries and reports.
+A full-stack budgeting app to track income, categorize spending, plan monthly allocations, and review reports.
 
-## Tech Stack
+## Stack
 
-- **Frontend:** Vue 3, Vite, Element Plus, Vue Router, ECharts (vue-echarts), Axios
-- **Backend:** Node.js, Express, MongoDB (Mongoose), JWT, bcryptjs, express-validator, PDFKit
+- Frontend: Vue 3, Vite, Element Plus, Vue Router, ECharts, Axios
+- Backend: Node.js, Express, MongoDB (Mongoose), JWT, bcryptjs, express-validator, PDFKit
+- Production recommendation: Vercel for the frontend, Render for the API, MongoDB Atlas for the database
 
-## Features
+## Project Structure
 
-- **User auth:** Register, login, logout (JWT)
-- **Transactions:** Add, edit, delete; tag by category (tithes, bills, expenses, debt, savings)
-- **Monthly budget:** Set income target and category allocations (fixed amounts)
-- **Dashboard:** Allocation vs spent, remaining balance, category breakdown charts
-- **Reports:** Monthly comparison, category trends, export to CSV and PDF
-- **Admin:** Manage categories, default allocations (admin users only)
-
-## Project structure
-
-```
+```text
 budgeting-app/
-├── server/          # Node.js API
-│   ├── config/       # DB connection
-│   ├── middleware/   # auth
-│   ├── models/       # User, Category, Transaction, Budget
-│   ├── routes/       # auth, categories, transactions, budgets, reports
-│   ├── scripts/      # seed default categories
-│   └── server.js
-├── client/         # Vue 3 app
-│   ├── src/
-│   │   ├── api/      # API client and endpoints
-│   │   ├── layouts/
-│   │   ├── router/
-│   │   └── views/    # Login, Register, Dashboard, Transactions, Monthly Plan, Reports, Admin
-│   └── index.html
-└── README.md
+|-- client/        # Vue 3 frontend
+|-- server/        # Express API
+|-- render.yaml    # Render blueprint for the API
+|-- vercel.json    # Vercel config for the frontend SPA
+`-- README.md
 ```
 
-## Setup
+## Local Development
 
 ### Prerequisites
 
-- Node.js 18+
-- MongoDB (local or Atlas)
+- Node.js 20+
+- MongoDB local instance or MongoDB Atlas
 
 ### Backend
 
-1. From project root:
-   ```bash
-   cd server
-   npm install
-   ```
-2. Copy `.env.example` to `.env` and set:
-   - `MONGODB_URI` (e.g. `mongodb://localhost:27017/budgeting-app`)
-   - `JWT_SECRET` (strong secret for production)
-   - `PORT` (default 3000)
-3. Start MongoDB, then:
-   ```bash
-   npm run dev
-   ```
-   Default categories are seeded on first run.
+```bash
+cd server
+npm install
+cp .env.example .env
+npm run dev
+```
+
+Set at least:
+
+- `MONGODB_URI`
+- `JWT_SECRET`
+- `CORS_ORIGIN=http://localhost:5173`
 
 ### Frontend
 
-1. From project root:
-   ```bash
-   cd client
-   npm install
-   npm run dev
-   ```
-2. Open http://localhost:5173. The dev server proxies `/api` to the backend.
+```bash
+cd client
+npm install
+cp .env.example .env
+npm run dev
+```
 
-### Production build
+Set:
 
-- **Backend:** `cd backend && npm start` (set `NODE_ENV=production` and real `MONGODB_URI`, `JWT_SECRET`).
-- **Frontend:** `cd frontend && npm run build`; serve the `dist/` folder and point API requests to your backend URL (e.g. configure `baseURL` in `src/api/client.js` or use env).
+- `VITE_API_URL=http://localhost:3000/api`
 
-## Default categories (seeded)
+## Production Deployment
 
-- Expense: Tithes, Bills, Expenses, Debt, Savings, Emergency Fund
-- Income: Salary, Other Income
+### Recommended Architecture
 
-Admins can add/edit categories and default allocations in the Admin module. To grant admin to a user (e.g. first account):
+- Vercel hosts the Vue frontend
+- Render hosts the Express API
+- MongoDB Atlas hosts the database
+
+This app is now configured for that split deployment:
+
+- [`render.yaml`](/C:/Users/Lester/Documents/Repositories/budgeting-app/render.yaml) defines the Render API service
+- [`vercel.json`](/C:/Users/Lester/Documents/Repositories/budgeting-app/vercel.json) keeps SPA routes working on Vercel
+
+### MongoDB Atlas
+
+Create an Atlas cluster, then copy the connection string into `MONGODB_URI`.
+
+Recommended env vars for Render:
+
+- `MONGODB_URI`
+- `MONGODB_DB_NAME` if your URI does not already include the database name
+- `JWT_SECRET`
+- `CORS_ORIGIN=https://your-frontend-domain.vercel.app`
+- `NODE_ENV=production`
+- `SEED_USERS=false`
+
+### Render API
+
+1. Push this repo to GitHub.
+2. In Render, create a Blueprint or Web Service from the repo.
+3. Use the `server` root directory.
+4. Confirm:
+   - Build command: `npm install`
+   - Start command: `npm start`
+   - Health check path: `/api/ready`
+5. Set the production environment variables listed above.
+
+### Vercel Frontend
+
+1. Import the repo into Vercel.
+2. Set the root directory to the repository root.
+3. Keep the existing build settings from [`vercel.json`](/C:/Users/Lester/Documents/Repositories/budgeting-app/vercel.json).
+4. Add:
+   - `VITE_API_URL=https://your-render-api.onrender.com/api`
+5. Deploy and then add the final Vercel domain to Render `CORS_ORIGIN`.
+
+## Production Hardening Included
+
+- DB initialization is now safe for long-running servers and serverless-style cold starts
+- `/api/ready` reports database readiness for platform health checks
+- CORS is explicit and environment-driven
+- Category deletion is blocked if transactions or budgets still reference the category
+- Budget summaries now surface unplanned spending instead of hiding it
+- PDF exports use PHP formatting instead of USD symbols
+
+## Notes
+
+- The API still uses JWTs stored in `localStorage`; that is acceptable for a small app, but HTTP-only cookie auth would be a stronger future upgrade.
+- Default categories are seeded automatically on startup.
+- To promote a user to admin:
 
 ```bash
 cd server
 node scripts/makeAdmin.js your@email.com
 ```
-
-## License
-
-MIT

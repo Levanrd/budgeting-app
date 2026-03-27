@@ -5,6 +5,7 @@ import { protect } from '../middleware/auth.js';
 import PDFDocument from 'pdfkit';
 
 const router = express.Router();
+const formatPeso = (amount) => `PHP ${Number(amount || 0).toFixed(2)}`;
 
 router.get('/monthly-comparison', protect, async (req, res) => {
   try {
@@ -103,9 +104,9 @@ router.get('/export/pdf', protect, async (req, res) => {
 
     if (budget) {
       doc.fontSize(12).text('Monthly plan', { continued: false });
-      doc.text(`Income target: $${budget.incomeTarget.toFixed(2)}`);
+      doc.text(`Income target: ${formatPeso(budget.incomeTarget)}`);
       budget.allocations?.forEach((a) => {
-        doc.text(`  ${a.category?.name}: $${a.amount.toFixed(2)}`);
+        doc.text(`  ${a.category?.name}: ${formatPeso(a.amount)}`);
       });
       doc.moveDown();
     }
@@ -114,7 +115,7 @@ router.get('/export/pdf', protect, async (req, res) => {
     doc.fontSize(9);
     transactions.slice(0, 100).forEach((t) => {
       doc.text(
-        `${new Date(t.date).toISOString().split('T')[0]} | ${t.type} | ${t.category?.name ?? ''} | $${t.amount.toFixed(2)} | ${t.description || '-'}`
+        `${new Date(t.date).toISOString().split('T')[0]} | ${t.type} | ${t.category?.name ?? ''} | ${formatPeso(t.amount)} | ${t.description || '-'}`
       );
     });
     if (transactions.length > 100) {
