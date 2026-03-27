@@ -38,6 +38,7 @@ import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { register } from '../api/auth';
+import { setStoredUser } from '../utils/auth';
 
 const router = useRouter();
 const formRef = ref(null);
@@ -54,8 +55,7 @@ async function onSubmit() {
   loading.value = true;
   try {
     const { data } = await register(form);
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
+    setStoredUser(data.user);
     ElMessage.success('Account created');
     router.push('/');
   } catch (e) {

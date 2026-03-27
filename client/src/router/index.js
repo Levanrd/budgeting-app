@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { clearStoredUser, ensureSessionUser, getStoredUser } from '../utils/auth';
 
 const routes = [
   {
@@ -29,18 +30,34 @@ const routes = [
 
 const router = createRouter({ history: createWebHistory(), routes });
 
-router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('token');
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
-  if (to.meta.requiresAuth && !token) {
-    next({ name: 'Login', query: { redirect: to.fullPath } });
-  } else if (to.meta.guest && token) {
-    next({ name: 'Dashboard' });
-  } else if (to.meta.admin && !user?.isAdmin) {
-    next({ name: 'Dashboard' });
-  } else {
-    next();
+router.beforeEach(async (to, from, next) => {
+  let user = getStoredUser();
+
+  if (!user && (to.meta.requiresAuth || to.meta.admin)) {
+    user = await ensureSessionUser();
   }
+
+  if (user && to.meta.guest) {
+    user = await ensureSessionUser();
+  }
+
+  if (to.meta.requiresAuth && !user) {
+    clearStoredUser();
+    next({ name: 'Login', query: { redirect: to.fullPath } });
+    return;
+  }
+
+  if (to.meta.guest && user) {
+    next({ name: 'Dashboard' });
+    return;
+  }
+
+  if (to.meta.admin && !user?.isAdmin) {
+    next({ name: 'Dashboard' });
+    return;
+  }
+
+  next();
 });
 
 export default router;

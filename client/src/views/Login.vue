@@ -35,6 +35,7 @@ import { ref, reactive } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { login } from '../api/auth';
+import { setStoredUser } from '../utils/auth';
 
 const router = useRouter();
 const route = useRoute();
@@ -51,8 +52,7 @@ async function onSubmit() {
   loading.value = true;
   try {
     const { data } = await login(form);
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
+    setStoredUser(data.user);
     ElMessage.success('Signed in successfully');
     router.push(route.query.redirect || '/');
   } catch (e) {

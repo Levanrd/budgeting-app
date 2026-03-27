@@ -49,15 +49,13 @@
 <script setup>
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { logout as logoutRequest } from '../api/auth';
+import { clearStoredUser, getStoredUser } from '../utils/auth';
 
 const route = useRoute();
 const router = useRouter();
 const user = computed(() => {
-  try {
-    return JSON.parse(localStorage.getItem('user') || '{}');
-  } catch {
-    return {};
-  }
+  return getStoredUser() || {};
 });
 
 const activeMenu = computed(() => route.path || '/');
@@ -72,10 +70,15 @@ const pageTitle = computed(() => {
   return map[route.path] || 'Budget Planner';
 });
 
-function logout() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  router.push('/login');
+async function logout() {
+  try {
+    await logoutRequest();
+  } catch {
+    // Clear client auth state even if the server session is already gone.
+  } finally {
+    clearStoredUser();
+    router.push('/login');
+  }
 }
 </script>
 
