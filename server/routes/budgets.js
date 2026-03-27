@@ -2,7 +2,7 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import Budget from '../models/Budget.js';
 import Transaction from '../models/Transaction.js';
-import { protect } from '../middleware/auth.js';
+import { protect, requireCsrf } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -98,6 +98,7 @@ router.get('/summary/:monthKey', protect, async (req, res) => {
 router.post(
   '/',
   protect,
+  requireCsrf,
   [
     body('monthKey').matches(/^\d{4}-\d{2}$/),
     body('incomeTarget').isFloat({ min: 0 }),
@@ -136,6 +137,7 @@ router.post(
 router.put(
   '/:monthKey',
   protect,
+  requireCsrf,
   [
     body('incomeTarget').optional().isFloat({ min: 0 }),
     body('allocations').optional().isArray(),

@@ -3,7 +3,7 @@ import { body, validationResult } from 'express-validator';
 import Category from '../models/Category.js';
 import Budget from '../models/Budget.js';
 import Transaction from '../models/Transaction.js';
-import { protect, admin } from '../middleware/auth.js';
+import { protect, requireCsrf, admin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -21,6 +21,7 @@ router.get('/', protect, async (req, res) => {
 router.post(
   '/',
   protect,
+  requireCsrf,
   admin,
   [
     body('name').trim().notEmpty(),
@@ -49,6 +50,7 @@ router.post(
 router.put(
   '/:id',
   protect,
+  requireCsrf,
   admin,
   [
     body('name').optional().trim().notEmpty(),
@@ -75,7 +77,7 @@ router.put(
   }
 );
 
-router.delete('/:id', protect, admin, async (req, res) => {
+router.delete('/:id', protect, requireCsrf, admin, async (req, res) => {
   try {
     const [transactionInUse, budgetInUse] = await Promise.all([
       Transaction.exists({ category: req.params.id }),

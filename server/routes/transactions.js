@@ -1,7 +1,7 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import Transaction from '../models/Transaction.js';
-import { protect } from '../middleware/auth.js';
+import { protect, requireCsrf } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -31,6 +31,7 @@ router.get('/', protect, async (req, res) => {
 router.post(
   '/',
   protect,
+  requireCsrf,
   [
     body('type').isIn(['income', 'expense']),
     body('amount').isFloat({ min: 0.01 }),
@@ -65,6 +66,7 @@ router.post(
 router.put(
   '/:id',
   protect,
+  requireCsrf,
   [
     body('type').optional().isIn(['income', 'expense']),
     body('amount').optional().isFloat({ min: 0.01 }),
@@ -98,7 +100,7 @@ router.put(
   }
 );
 
-router.delete('/:id', protect, async (req, res) => {
+router.delete('/:id', protect, requireCsrf, async (req, res) => {
   try {
     const transaction = await Transaction.findOneAndDelete({
       _id: req.params.id,
