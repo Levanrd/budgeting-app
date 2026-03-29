@@ -3,6 +3,7 @@ import { body, validationResult } from 'express-validator';
 import Budget from '../models/Budget.js';
 import Transaction from '../models/Transaction.js';
 import { protect, requireCsrf } from '../middleware/auth.js';
+import { writeRateLimit } from '../middleware/security.js';
 
 const router = express.Router();
 
@@ -97,6 +98,7 @@ router.get('/summary/:monthKey', protect, async (req, res) => {
 
 router.post(
   '/',
+  writeRateLimit,
   protect,
   requireCsrf,
   [
@@ -136,6 +138,7 @@ router.post(
 
 router.put(
   '/:monthKey',
+  writeRateLimit,
   protect,
   requireCsrf,
   [

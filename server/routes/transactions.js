@@ -1,5 +1,6 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
+import { writeRateLimit } from '../middleware/security.js';
 import Transaction from '../models/Transaction.js';
 import { protect, requireCsrf } from '../middleware/auth.js';
 
@@ -30,6 +31,7 @@ router.get('/', protect, async (req, res) => {
 
 router.post(
   '/',
+  writeRateLimit,
   protect,
   requireCsrf,
   [
@@ -65,6 +67,7 @@ router.post(
 
 router.put(
   '/:id',
+  writeRateLimit,
   protect,
   requireCsrf,
   [
@@ -100,7 +103,7 @@ router.put(
   }
 );
 
-router.delete('/:id', protect, requireCsrf, async (req, res) => {
+router.delete('/:id', writeRateLimit, protect, requireCsrf, async (req, res) => {
   try {
     const transaction = await Transaction.findOneAndDelete({
       _id: req.params.id,

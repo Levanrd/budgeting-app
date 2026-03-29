@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import { connectDB } from './config/db.js';
+import { authRateLimit, securityHeaders } from './middleware/security.js';
 import authRoutes from './routes/auth.js';
 import categoriesRoutes from './routes/categories.js';
 import transactionsRoutes from './routes/transactions.js';
@@ -52,7 +53,10 @@ app.use(
   })
 );
 
+app.use(securityHeaders);
 app.use(express.json());
+app.use('/api/auth/login', authRateLimit);
+app.use('/api/auth/register', authRateLimit);
 
 let dbInitialized = false;
 let initializationPromise = null;
