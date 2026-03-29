@@ -1,14 +1,26 @@
 <template>
   <div class="dashboard">
+    <PageGuide
+      title="How to use the dashboard"
+      description="This page gives you a quick month-by-month snapshot of your plan versus your actual spending."
+      :tips="[
+        'Switch months from the dropdown to review previous budget cycles.',
+        'Use Remaining to spot how much of your target income is still available.',
+        'Check the category chart to quickly find overspending areas.'
+      ]"
+    />
+
     <div class="month-selector">
-      <el-select v-model="monthKey" placeholder="Select month" @change="loadSummary" style="width: 180px">
-        <el-option
-          v-for="m in monthOptions"
-          :key="m.value"
-          :label="m.label"
-          :value="m.value"
-        />
-      </el-select>
+      <el-tooltip content="Review another month without leaving the dashboard" placement="top">
+        <el-select v-model="monthKey" placeholder="Select month" @change="loadSummary" style="width: 180px">
+          <el-option
+            v-for="m in monthOptions"
+            :key="m.value"
+            :label="m.label"
+            :value="m.value"
+          />
+        </el-select>
+      </el-tooltip>
     </div>
 
     <el-row :gutter="20" class="summary-cards">
@@ -81,6 +93,7 @@ import { BarChart } from 'echarts/charts';
 import { GridComponent, TooltipComponent } from 'echarts/components';
 import { getBudgetSummary } from '../api/budgets';
 import { formatMoney } from '../utils/format';
+import PageGuide from '../components/PageGuide.vue';
 
 use([CanvasRenderer, BarChart, GridComponent, TooltipComponent]);
 
@@ -177,4 +190,14 @@ onMounted(loadSummary);
 }
 .text-success { color: #34a853; }
 .text-danger { color: #ea4335; }
+
+@media (max-width: 768px) {
+  .dashboard {
+    max-width: none;
+  }
+
+  .chart-wrap {
+    height: 240px;
+  }
+}
 </style>

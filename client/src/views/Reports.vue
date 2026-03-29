@@ -1,5 +1,15 @@
 <template>
   <div class="reports-page">
+    <PageGuide
+      title="How to use reports"
+      description="Reports help you compare spending patterns across months and export your records when you need a file copy."
+      :tips="[
+        'Use the month filter to isolate category trends for one budget cycle.',
+        'Monthly comparison is best for spotting changes in income versus expenses.',
+        'Exports are useful for sharing or keeping an offline record.'
+      ]"
+    />
+
     <div class="toolbar">
       <el-select v-model="reportMonth" placeholder="Month (for trends)" clearable style="width: 180px" @change="loadTrends">
         <el-option
@@ -14,8 +24,12 @@
         <el-option :value="6" label="Last 6 months" />
         <el-option :value="12" label="Last 12 months" />
       </el-select>
-      <el-button type="success" :loading="exportingCsv" @click="doExportCsv">Export CSV</el-button>
-      <el-button type="primary" :loading="exportingPdf" @click="doExportPdf">Export PDF</el-button>
+      <el-tooltip content="Download your filtered transaction list as a spreadsheet-friendly file" placement="top">
+        <el-button type="success" :loading="exportingCsv" @click="doExportCsv">Export CSV</el-button>
+      </el-tooltip>
+      <el-tooltip content="Generate a printable PDF summary for the selected month or all records" placement="top">
+        <el-button type="primary" :loading="exportingPdf" @click="doExportPdf">Export PDF</el-button>
+      </el-tooltip>
     </div>
 
     <el-row :gutter="20">
@@ -47,6 +61,7 @@ import { CanvasRenderer } from 'echarts/renderers';
 import { BarChart, PieChart } from 'echarts/charts';
 import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components';
 import { getMonthlyComparison, getCategoryTrends, exportCsv, exportPdf } from '../api/reports';
+import PageGuide from '../components/PageGuide.vue';
 
 use([CanvasRenderer, BarChart, PieChart, GridComponent, TooltipComponent, LegendComponent]);
 
@@ -177,5 +192,15 @@ onMounted(() => {
 }
 .chart-wrap {
   height: 320px;
+}
+
+@media (max-width: 768px) {
+  .reports-page {
+    max-width: none;
+  }
+
+  .chart-wrap {
+    height: 260px;
+  }
 }
 </style>

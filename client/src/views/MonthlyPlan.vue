@@ -1,5 +1,15 @@
 <template>
   <div class="plan-page">
+    <PageGuide
+      title="How to build your monthly plan"
+      description="Set your target income first, then distribute that amount across the categories you expect to spend from."
+      :tips="[
+        'Use fixed amounts for predictable categories like bills or debt.',
+        'Watch the remaining amount so you do not over-allocate your income.',
+        'Update the plan each month before adding new expenses.'
+      ]"
+    />
+
     <div class="toolbar">
       <el-select v-model="monthKey" placeholder="Month" style="width: 200px" @change="load">
         <el-option
@@ -9,7 +19,9 @@
           :value="m.value"
         />
       </el-select>
-      <el-button type="primary" :loading="saving" @click="savePlan">Save plan</el-button>
+      <el-tooltip content="Save this month’s budget plan and category allocations" placement="top">
+        <el-button type="primary" :loading="saving" @click="savePlan">Save plan</el-button>
+      </el-tooltip>
     </div>
 
     <el-card shadow="hover" class="plan-card">
@@ -59,6 +71,7 @@ import { ElMessage } from 'element-plus';
 import { getBudgets, getBudgetSummary, saveBudget } from '../api/budgets';
 import { getCategories } from '../api/categories';
 import { formatMoney } from '../utils/format';
+import PageGuide from '../components/PageGuide.vue';
 
 const monthKey = ref(getCurrentMonthKey());
 const incomeTarget = ref(0);
@@ -176,5 +189,21 @@ onMounted(load);
 }
 .muted {
   color: #94a3b8;
+}
+
+@media (max-width: 768px) {
+  .plan-page {
+    max-width: none;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .totals {
+    flex-direction: column;
+    gap: 8px;
+  }
 }
 </style>

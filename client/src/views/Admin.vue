@@ -1,12 +1,24 @@
 <template>
   <div class="admin-page">
+    <PageGuide
+      title="Admin guide"
+      description="Use this area to manage shared categories and default allocations that shape the budgeting workflow for everyone."
+      :tips="[
+        'Only create categories users will consistently need.',
+        'Set default allocations to speed up monthly planning.',
+        'Avoid deleting categories that have already been used in reports.'
+      ]"
+    />
+
     <el-tabs v-model="activeTab">
       <el-tab-pane label="Categories" name="categories">
         <el-card shadow="hover">
           <div class="toolbar">
-            <el-button type="primary" @click="openCategoryDialog()">Add category</el-button>
+            <el-tooltip content="Create a new budget category for income or expenses" placement="top">
+              <el-button type="primary" @click="openCategoryDialog()">Add category</el-button>
+            </el-tooltip>
           </div>
-          <el-table v-loading="loadingCategories" :data="categories" stripe>
+          <el-table v-loading="loadingCategories" :data="categories" stripe class="admin-table">
             <el-table-column prop="name" label="Name" />
             <el-table-column prop="slug" label="Slug" width="140" />
             <el-table-column prop="type" label="Type" width="100">
@@ -86,6 +98,7 @@ import { ref, reactive, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '../api/categories';
 import { formatMoney } from '../utils/format';
+import PageGuide from '../components/PageGuide.vue';
 
 const activeTab = ref('categories');
 const loadingCategories = ref(false);
@@ -203,5 +216,15 @@ onMounted(loadCategories);
 }
 .toolbar {
   margin-bottom: 16px;
+}
+
+@media (max-width: 768px) {
+  .admin-page {
+    max-width: none;
+  }
+
+  :deep(.el-table__body-wrapper) {
+    overflow-x: auto;
+  }
 }
 </style>

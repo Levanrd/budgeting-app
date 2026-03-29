@@ -1,5 +1,15 @@
 <template>
   <div class="transactions-page">
+    <PageGuide
+      title="How to manage transactions"
+      description="Record every income and expense here so your dashboard and reports stay accurate."
+      :tips="[
+        'Use filters to focus on one month or one transaction type.',
+        'Add transactions as they happen so totals stay current.',
+        'Edit incorrect entries instead of creating duplicates.'
+      ]"
+    />
+
     <div class="toolbar">
       <el-select
         v-model="filterMonth"
@@ -27,14 +37,17 @@
         <el-option label="Expense" value="expense" />
       </el-select>
 
-      <el-button type="primary" @click="openDialog()">Add transaction</el-button>
+      <el-tooltip content="Add a new income or expense entry" placement="top">
+        <el-button type="primary" @click="openDialog()">Add transaction</el-button>
+      </el-tooltip>
     </div>
 
-    <el-card shadow="hover">
+    <el-card shadow="hover" class="transactions-card">
       <el-table
         v-loading="loading"
         :data="paginatedTransactions"
         stripe
+        class="transactions-table"
         @sort-change="handleSortChange"
       >
         <el-table-column
@@ -149,6 +162,7 @@ import { ElMessage } from 'element-plus';
 import { getTransactions, createTransaction, updateTransaction, deleteTransaction } from '../api/transactions';
 import { getCategories } from '../api/categories';
 import { formatMoney } from '../utils/format';
+import PageGuide from '../components/PageGuide.vue';
 
 const loading = ref(false);
 const saving = ref(false);
@@ -384,4 +398,26 @@ onMounted(() => {
 }
 .text-income { color: #34a853; }
 .text-expense { color: #ea4335; }
+
+@media (max-width: 768px) {
+  .transactions-page {
+    max-width: none;
+  }
+
+  .transactions-card {
+    overflow: hidden;
+  }
+
+  .transactions-table {
+    width: 100%;
+  }
+
+  :deep(.el-table__body-wrapper) {
+    overflow-x: auto;
+  }
+
+  .pagination {
+    justify-content: flex-start;
+  }
+}
 </style>
