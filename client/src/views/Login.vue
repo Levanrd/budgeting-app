@@ -1,8 +1,13 @@
 <template>
   <div class="auth-page">
     <div class="auth-card">
-      <h1 class="auth-title">Budget Planner</h1>
-      <p class="auth-subtitle">Sign in to manage your budget</p>
+      <div class="auth-copy">
+        <h1 class="auth-title">Budget Planner</h1>
+        <p class="auth-subtitle">Sign in to manage your budget</p>
+        <p class="auth-note">
+          Use your account to review your monthly plan, update transactions, and keep reports in sync.
+        </p>
+      </div>
       <el-form
         ref="formRef"
         :model="form"
@@ -90,6 +95,12 @@ async function onSubmit() {
   color: #64748b;
   font-size: 0.95rem;
 }
+.auth-note {
+  margin: 0 0 20px;
+  color: #475569;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
 .auth-form {
   margin-top: 8px;
 }
@@ -108,5 +119,22 @@ async function onSubmit() {
 }
 .auth-footer a:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .auth-page {
+    padding: 16px;
+    align-items: stretch;
+  }
+
+  .auth-card {
+    max-width: none;
+    padding: 28px 20px;
+    border-radius: 16px;
+  }
+
+  .auth-title {
+    font-size: 1.5rem;
+  }
 }
 </style>

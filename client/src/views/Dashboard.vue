@@ -1,5 +1,29 @@
 <template>
   <div class="dashboard">
+    <el-alert
+      v-if="showChecklist"
+      title="Quick start checklist"
+      type="success"
+      show-icon
+      :closable="false"
+      class="quick-start"
+    >
+      <template #default>
+        <p class="quick-start-description">
+          New to Budget Planner? Work through these steps once to get your dashboard working for you.
+        </p>
+        <ol class="quick-start-list">
+          <li>Create or review your categories in Admin if you need custom budget groups.</li>
+          <li>Open Monthly Plan and set your target income plus category allocations.</li>
+          <li>Add your income and expense transactions so the dashboard reflects real activity.</li>
+          <li>Visit Reports to compare months and export your records.</li>
+        </ol>
+        <div class="quick-start-actions">
+          <el-button type="primary" size="small" @click="dismissChecklist">Got it</el-button>
+        </div>
+      </template>
+    </el-alert>
+
     <PageGuide
       title="How to use the dashboard"
       description="This page gives you a quick month-by-month snapshot of your plan versus your actual spending."
@@ -97,7 +121,9 @@ import PageGuide from '../components/PageGuide.vue';
 
 use([CanvasRenderer, BarChart, GridComponent, TooltipComponent]);
 
+const CHECKLIST_STORAGE_KEY = 'dashboard_quick_start_dismissed';
 const monthKey = ref(getCurrentMonthKey());
+const showChecklist = ref(localStorage.getItem(CHECKLIST_STORAGE_KEY) !== 'true');
 const summary = ref({
   incomeTarget: 0,
   allocatedTotal: 0,
@@ -139,6 +165,11 @@ function getCurrentMonthKey() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
+function dismissChecklist() {
+  localStorage.setItem(CHECKLIST_STORAGE_KEY, 'true');
+  showChecklist.value = false;
+}
+
 async function loadSummary() {
   try {
     const { data } = await getBudgetSummary(monthKey.value);
@@ -160,6 +191,22 @@ onMounted(loadSummary);
 <style scoped>
 .dashboard {
   max-width: 1200px;
+}
+.quick-start {
+  margin-bottom: 20px;
+}
+.quick-start-description {
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+.quick-start-list {
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.6;
+  color: #475569;
+}
+.quick-start-actions {
+  margin-top: 12px;
 }
 .month-selector {
   margin-bottom: 20px;
@@ -194,6 +241,10 @@ onMounted(loadSummary);
 @media (max-width: 768px) {
   .dashboard {
     max-width: none;
+  }
+
+  .quick-start {
+    margin-bottom: 16px;
   }
 
   .chart-wrap {
