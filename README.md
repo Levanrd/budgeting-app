@@ -96,22 +96,24 @@ Recommended env vars for Render:
 1. Import the repo into Vercel.
 2. Set the root directory to the repository root.
 3. Keep the existing build settings from [`vercel.json`](/C:/Users/Lester/Documents/Repositories/budgeting-app/vercel.json).
-4. Add:
-   - `VITE_API_URL=https://your-render-api.onrender.com/api`
-5. Deploy and then add the final Vercel domain to Render `CORS_ORIGIN`.
+4. Do not set `VITE_API_URL` in production. The Vercel app proxies `/api/*` to the Render API so auth cookies stay first-party on the frontend domain.
+5. Add:
+   - `VITE_APP_TIMEZONE=Asia/Manila`
+6. Deploy and then add the final Vercel domain to Render `CORS_ORIGIN`.
 
 ## Production Hardening Included
 
 - DB initialization is now safe for long-running servers and serverless-style cold starts
 - `/api/ready` reports database readiness for platform health checks
 - CORS is explicit and environment-driven
+- Production API calls can be proxied through the frontend domain so mobile browsers keep auth cookies on refresh
 - Category deletion is blocked if transactions or budgets still reference the category
 - Budget summaries now surface unplanned spending instead of hiding it
 - PDF exports use PHP formatting instead of USD symbols
 
 ## Notes
 
-- The API still uses JWTs stored in `localStorage`; that is acceptable for a small app, but HTTP-only cookie auth would be a stronger future upgrade.
+- Authentication now uses HTTP-only cookies plus CSRF protection instead of storing the JWT in `localStorage`.
 - Default categories are seeded automatically on startup.
 - To promote a user to admin:
 
