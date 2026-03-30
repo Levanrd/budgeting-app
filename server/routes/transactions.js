@@ -3,13 +3,9 @@ import { body, validationResult } from 'express-validator';
 import { writeRateLimit } from '../middleware/security.js';
 import Transaction from '../models/Transaction.js';
 import { protect, requireCsrf } from '../middleware/auth.js';
+import { getMonthKey } from '../utils/month.js';
 
 const router = express.Router();
-
-const getMonthKey = (date) => {
-  const d = new Date(date);
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
-};
 
 router.get('/', protect, async (req, res) => {
   try {
