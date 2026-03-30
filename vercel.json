@@ -4,7 +4,11 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/((?!assets/|favicon.ico|vite.svg).*)",
+      "source": "/api/(.*)",
+      "destination": "https://budgeting-app-api-3zzy.onrender.com/api/$1"
+    },
+    {
+      "source": "/((?!api/|assets/|favicon.ico|vite.svg).*)",
       "destination": "/index.html"
     }
   ]

@@ -20,6 +20,8 @@ pnpm-lock.yaml
 # Build outputs
 dist/
 build/
+.vite/
+client/.vite/
 *.local
 
 # Logs
