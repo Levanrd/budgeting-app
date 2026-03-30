@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
 const getCookie = (name) => {
   const match = document.cookie
     .split('; ')
@@ -8,7 +9,7 @@ const getCookie = (name) => {
 };
 
 const client = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: isLocalhost ? (import.meta.env.VITE_API_URL || '/api') : '/api',
   headers: { 'Content-Type': 'application/json' },
   withCredentials: true,
 });
