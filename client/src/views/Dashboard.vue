@@ -117,6 +117,7 @@ import { BarChart } from 'echarts/charts';
 import { GridComponent, TooltipComponent } from 'echarts/components';
 import { getBudgetSummary } from '../api/budgets';
 import { formatMoney } from '../utils/format';
+import { getMonthKey, getRecentMonthOptions } from '../utils/month';
 import PageGuide from '../components/PageGuide.vue';
 
 use([CanvasRenderer, BarChart, GridComponent, TooltipComponent]);
@@ -133,16 +134,7 @@ const summary = ref({
 });
 
 const monthOptions = computed(() => {
-  const opts = [];
-  const d = new Date();
-  for (let i = 0; i < 12; i++) {
-    const y = d.getFullYear();
-    const m = d.getMonth() - i;
-    const date = new Date(y, m, 1);
-    const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    opts.push({ value, label: date.toLocaleString('default', { month: 'long', year: 'numeric' }) });
-  }
-  return opts;
+  return getRecentMonthOptions(12, 'long');
 });
 
 const categoryChartOption = computed(() => {
@@ -161,8 +153,7 @@ const categoryChartOption = computed(() => {
 });
 
 function getCurrentMonthKey() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  return getMonthKey(new Date());
 }
 
 function dismissChecklist() {

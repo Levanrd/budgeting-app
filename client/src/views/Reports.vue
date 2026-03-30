@@ -61,6 +61,7 @@ import { CanvasRenderer } from 'echarts/renderers';
 import { BarChart, PieChart } from 'echarts/charts';
 import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components';
 import { getMonthlyComparison, getCategoryTrends, exportCsv, exportPdf } from '../api/reports';
+import { getRecentMonthOptions } from '../utils/month';
 import PageGuide from '../components/PageGuide.vue';
 
 use([CanvasRenderer, BarChart, PieChart, GridComponent, TooltipComponent, LegendComponent]);
@@ -72,16 +73,7 @@ const trendsData = ref([]);
 const exportingCsv = ref(false);
 const exportingPdf = ref(false);
 
-const monthOptions = (() => {
-  const opts = [];
-  const d = new Date();
-  for (let i = 0; i < 12; i++) {
-    const date = new Date(d.getFullYear(), d.getMonth() - i, 1);
-    const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    opts.push({ value, label: date.toLocaleString('default', { month: 'short', year: 'numeric' }) });
-  }
-  return opts;
-})();
+const monthOptions = getRecentMonthOptions(12, 'short');
 
 const comparisonChartOption = computed(() => {
   const data = monthlyData.value || [];
