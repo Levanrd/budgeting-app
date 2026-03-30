@@ -162,6 +162,7 @@ import { ElMessage } from 'element-plus';
 import { getTransactions, createTransaction, updateTransaction, deleteTransaction } from '../api/transactions';
 import { getCategories } from '../api/categories';
 import { formatMoney } from '../utils/format';
+import { getRecentMonthOptions } from '../utils/month';
 import PageGuide from '../components/PageGuide.vue';
 
 const loading = ref(false);
@@ -209,19 +210,7 @@ const rules = {
   date: [{ required: true, message: 'Date required', trigger: 'change' }],
 };
 
-const monthOptions = (() => {
-  const opts = [];
-  const d = new Date();
-  for (let i = 0; i < 12; i++) {
-    const date = new Date(d.getFullYear(), d.getMonth() - i, 1);
-    const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    opts.push({
-      value,
-      label: date.toLocaleString('default', { month: 'long', year: 'numeric' }),
-    });
-  }
-  return opts;
-})();
+const monthOptions = getRecentMonthOptions(12, 'long');
 
 watch(
   () => form.type,
