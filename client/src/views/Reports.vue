@@ -79,7 +79,7 @@ const comparisonChartOption = computed(() => {
   const data = monthlyData.value || [];
   const labels = data.map((d) => {
     const [y, m] = d.monthKey.split('-');
-    return new Date(Number(y), Number(m) - 1, 1).toLocaleString('default', { month: 'short', year: '2-digit' });
+    return new Date(Number(y), Number(m) - 1, 1).toLocaleString('default', { month: 'short', year: 'numeric' });
   });
   return {
     tooltip: { trigger: 'axis' },
