@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import { connectDB } from './config/db.js';
 import { authRateLimit, securityHeaders } from './middleware/security.js';
 import authRoutes from './routes/auth.js';
+import usersRoutes from './routes/users.js';
 import categoriesRoutes from './routes/categories.js';
 import transactionsRoutes from './routes/transactions.js';
 import budgetsRoutes from './routes/budgets.js';
@@ -128,6 +129,7 @@ app.get('/api/ready', async (req, res) => {
 
 app.use('/api', ensureInitialized);
 app.use('/api/auth', authRoutes);
+app.use('/api/users', usersRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/transactions', transactionsRoutes);
 app.use('/api/budgets', budgetsRoutes);
