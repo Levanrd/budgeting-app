@@ -2,11 +2,11 @@
   <div class="admin-page">
     <PageGuide
       title="Admin guide"
-      description="Use this area to manage shared categories and default allocations that shape the budgeting workflow for everyone."
+      description="Use this area to manage shared categories and control which users can access the app as regular members or admins."
       :tips="[
         'Only create categories users will consistently need.',
-        'Set default allocations to speed up monthly planning.',
-        'Avoid deleting categories that have already been used in reports.'
+        'Use admin access sparingly so account changes stay deliberate.',
+        'Review delete prompts carefully before removing users or categories.'
       ]"
     />
 
@@ -18,6 +18,7 @@
               <el-button type="primary" @click="openCategoryDialog()">Add category</el-button>
             </el-tooltip>
           </div>
+
           <el-table v-loading="loadingCategories" :data="categories" stripe class="admin-table">
             <el-table-column prop="name" label="Name" />
             <el-table-column prop="slug" label="Slug" width="140" />
@@ -28,11 +29,11 @@
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="defaultAllocation" label="Default allocation" width="140">
+            <el-table-column prop="defaultAllocation" label="Default allocation" width="160">
               <template #default="{ row }">{{ formatMoney(row.defaultAllocation) }}</template>
             </el-table-column>
             <el-table-column prop="order" label="Order" width="80" />
-            <el-table-column label="Actions" width="160">
+            <el-table-column label="Actions" width="160" fixed="right">
               <template #default="{ row }">
                 <el-button link type="primary" size="small" @click="openCategoryDialog(row)">Edit</el-button>
                 <el-button
@@ -41,6 +42,45 @@
                   type="danger"
                   size="small"
                   @click="confirmDeleteCategory(row)"
+                >
+                  Delete
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-card>
+      </el-tab-pane>
+
+      <el-tab-pane label="Users" name="users">
+        <el-card shadow="hover">
+          <div class="toolbar">
+            <el-tooltip content="Create a new member or admin account" placement="top">
+              <el-button type="primary" @click="openUserDialog()">Add user</el-button>
+            </el-tooltip>
+          </div>
+
+          <el-table v-loading="loadingUsers" :data="users" stripe class="admin-table">
+            <el-table-column prop="name" label="Name" min-width="180" />
+            <el-table-column prop="email" label="Email" min-width="220" />
+            <el-table-column label="Role" width="120">
+              <template #default="{ row }">
+                <el-tag :type="row.isAdmin ? 'danger' : 'info'" size="small">
+                  {{ row.isAdmin ? 'Admin' : 'User' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="Created" width="180">
+              <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+            </el-table-column>
+            <el-table-column label="Actions" width="180" fixed="right">
+              <template #default="{ row }">
+                <el-button link type="primary" size="small" @click="openUserDialog(row)">Edit</el-button>
+                <el-button
+                  link
+                  type="danger"
+                  size="small"
+                  :disabled="row.id === currentUserId || row._id === currentUserId"
+                  @click="confirmDeleteUser(row)"
                 >
                   Delete
                 </el-button>
@@ -83,33 +123,67 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="deleteCategoryDialogVisible" title="Delete category" width="400px">
-      <p>Are you sure you want to delete this category? Transactions using it may be affected.</p>
+    <el-dialog
+      v-model="userDialogVisible"
+      :title="editingUserId ? 'Edit user' : 'Add user'"
+      width="460px"
+      @close="resetUserForm"
+    >
+      <el-form ref="userFormRef" :model="userForm" :rules="userRules" label-width="110px">
+        <el-form-item label="Name" prop="name">
+          <el-input v-model="userForm.name" placeholder="Full name" />
+        </el-form-item>
+        <el-form-item label="Email" prop="email">
+          <el-input v-model="userForm.email" placeholder="name@example.com" />
+        </el-form-item>
+        <el-form-item :label="editingUserId ? 'Password' : 'Password'" prop="password">
+          <el-input
+            v-model="userForm.password"
+            type="password"
+            show-password
+            :placeholder="editingUserId ? 'Leave blank to keep current password' : 'At least 6 characters'"
+          />
+        </el-form-item>
+        <el-form-item label="Admin access" prop="isAdmin">
+          <el-switch v-model="userForm.isAdmin" />
+        </el-form-item>
+      </el-form>
       <template #footer>
-        <el-button @click="deleteCategoryDialogVisible = false">Cancel</el-button>
-        <el-button type="danger" :loading="deletingCategory" @click="doDeleteCategory">Delete</el-button>
+        <el-button @click="userDialogVisible = false">Cancel</el-button>
+        <el-button type="primary" :loading="savingUser" @click="submitUser">Save</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
+import Swal from 'sweetalert2';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '../api/categories';
+import { createUser, deleteUser, getUsers, updateUser } from '../api/users';
+import { getStoredUser, setStoredUser } from '../utils/auth';
 import { formatMoney } from '../utils/format';
 import PageGuide from '../components/PageGuide.vue';
 
 const activeTab = ref('categories');
+
 const loadingCategories = ref(false);
 const categories = ref([]);
 const categoryDialogVisible = ref(false);
-const deleteCategoryDialogVisible = ref(false);
 const categoryFormRef = ref(null);
 const editingCategoryId = ref(null);
 const savingCategory = ref(false);
-const deletingCategory = ref(false);
-const categoryToDeleteId = ref(null);
+
+const loadingUsers = ref(false);
+const users = ref([]);
+const userDialogVisible = ref(false);
+const userFormRef = ref(null);
+const editingUserId = ref(null);
+const savingUser = ref(false);
+
+const currentUser = computed(() => getStoredUser() || {});
+const currentUserId = computed(() => currentUser.value?.id || '');
 
 const categoryForm = reactive({
   name: '',
@@ -119,21 +193,69 @@ const categoryForm = reactive({
   order: 0,
 });
 
+const userForm = reactive({
+  name: '',
+  email: '',
+  password: '',
+  isAdmin: false,
+});
+
 const categoryRules = {
   name: [{ required: true, message: 'Name is required', trigger: 'blur' }],
   slug: [{ required: true, message: 'Slug is required', trigger: 'blur' }],
   type: [{ required: true }],
 };
 
+const userRules = {
+  name: [{ required: true, message: 'Name is required', trigger: 'blur' }],
+  email: [
+    { required: true, message: 'Email is required', trigger: 'blur' },
+    { type: 'email', message: 'Enter a valid email address', trigger: ['blur', 'change'] },
+  ],
+  password: [
+    {
+      validator: (_, value, callback) => {
+        if (!editingUserId.value && !value) {
+          callback(new Error('Password is required'));
+          return;
+        }
+        if (value && value.length < 6) {
+          callback(new Error('Password must be at least 6 characters'));
+          return;
+        }
+        callback();
+      },
+      trigger: 'blur',
+    },
+  ],
+};
+
+function formatDateTime(value) {
+  if (!value) return '—';
+  return new Date(value).toLocaleString();
+}
+
 async function loadCategories() {
   loadingCategories.value = true;
   try {
     const { data } = await getCategories();
-    categories.value = data;
+    categories.value = Array.isArray(data) ? data : [];
   } catch {
     categories.value = [];
   } finally {
     loadingCategories.value = false;
+  }
+}
+
+async function loadUsers() {
+  loadingUsers.value = true;
+  try {
+    const { data } = await getUsers();
+    users.value = Array.isArray(data) ? data : [];
+  } catch {
+    users.value = [];
+  } finally {
+    loadingUsers.value = false;
   }
 }
 
@@ -159,7 +281,9 @@ function resetCategoryForm() {
 }
 
 async function submitCategory() {
-  await categoryFormRef.value?.validate().catch(() => {});
+  const isValid = await categoryFormRef.value?.validate().catch(() => false);
+  if (isValid === false) return;
+
   savingCategory.value = true;
   try {
     if (editingCategoryId.value) {
@@ -178,7 +302,7 @@ async function submitCategory() {
       ElMessage.success('Category created');
     }
     categoryDialogVisible.value = false;
-    loadCategories();
+    await loadCategories();
   } catch (e) {
     ElMessage.error(e.response?.data?.message || 'Save failed');
   } finally {
@@ -186,41 +310,147 @@ async function submitCategory() {
   }
 }
 
-function confirmDeleteCategory(row) {
-  categoryToDeleteId.value = row._id;
-  deleteCategoryDialogVisible.value = true;
-}
+async function confirmDeleteCategory(row) {
+  const result = await Swal.fire({
+    title: 'Delete category?',
+    text: `This will remove "${row.name}". Existing records linked to it may block the delete.`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Delete',
+    confirmButtonColor: '#dc2626',
+  });
 
-async function doDeleteCategory() {
-  if (!categoryToDeleteId.value) return;
-  deletingCategory.value = true;
+  if (!result.isConfirmed) return;
+
   try {
-    await deleteCategory(categoryToDeleteId.value);
+    await deleteCategory(row._id);
     ElMessage.success('Category deleted');
-    deleteCategoryDialogVisible.value = false;
-    categoryToDeleteId.value = null;
-    loadCategories();
+    await loadCategories();
   } catch (e) {
-    ElMessage.error(e.response?.data?.message || 'Delete failed');
-  } finally {
-    deletingCategory.value = false;
+    await Swal.fire({
+      title: 'Delete failed',
+      text: e.response?.data?.message || 'The category could not be deleted.',
+      icon: 'error',
+    });
   }
 }
 
-onMounted(loadCategories);
+function openUserDialog(row) {
+  editingUserId.value = row?._id ?? row?.id ?? null;
+  if (row) {
+    userForm.name = row.name;
+    userForm.email = row.email;
+    userForm.password = '';
+    userForm.isAdmin = !!row.isAdmin;
+  }
+  userDialogVisible.value = true;
+}
+
+function resetUserForm() {
+  editingUserId.value = null;
+  userForm.name = '';
+  userForm.email = '';
+  userForm.password = '';
+  userForm.isAdmin = false;
+}
+
+async function submitUser() {
+  const isValid = await userFormRef.value?.validate().catch(() => false);
+  if (isValid === false) return;
+
+  savingUser.value = true;
+  try {
+    const payload = {
+      name: userForm.name,
+      email: userForm.email,
+      isAdmin: userForm.isAdmin,
+    };
+
+    if (userForm.password) {
+      payload.password = userForm.password;
+    }
+
+    if (editingUserId.value) {
+      const { data } = await updateUser(editingUserId.value, payload);
+      if ((data?.user?.id || data?.user?._id) === currentUserId.value) {
+        setStoredUser(data.user);
+      }
+      ElMessage.success('User updated');
+    } else {
+      await createUser(payload);
+      ElMessage.success('User created');
+    }
+
+    userDialogVisible.value = false;
+    await loadUsers();
+  } catch (e) {
+    await Swal.fire({
+      title: 'Save failed',
+      text: e.response?.data?.message || 'The user could not be saved.',
+      icon: 'error',
+    });
+  } finally {
+    savingUser.value = false;
+  }
+}
+
+async function confirmDeleteUser(row) {
+  const result = await Swal.fire({
+    title: 'Delete user?',
+    text: `This will permanently remove ${row.name}'s account.`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Delete',
+    confirmButtonColor: '#dc2626',
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    await deleteUser(row._id ?? row.id);
+    ElMessage.success('User deleted');
+    await loadUsers();
+  } catch (e) {
+    await Swal.fire({
+      title: 'Delete failed',
+      text: e.response?.data?.message || 'The user could not be deleted.',
+      icon: 'error',
+    });
+  }
+}
+
+onMounted(() => {
+  loadCategories();
+  loadUsers();
+});
 </script>
 
 <style scoped>
 .admin-page {
-  max-width: 900px;
+  max-width: 1100px;
 }
+
 .toolbar {
   margin-bottom: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.admin-table {
+  width: 100%;
 }
 
 @media (max-width: 768px) {
   .admin-page {
     max-width: none;
+  }
+
+  .toolbar {
+    justify-content: stretch;
+  }
+
+  .toolbar :deep(.el-button) {
+    width: 100%;
   }
 
   :deep(.el-table__body-wrapper) {
